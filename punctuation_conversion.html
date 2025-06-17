@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中文标点符号转换工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 28px;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        .header p {
+            font-size: 16px;
+            color: #606770;
+        }
+        .options-section {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center the checkbox */
+            width: 100%;
+            max-width: 1000px; /* Match container width */
+            padding: 0 30px; /* Match container padding */
+            box-sizing: border-box;
+        }
+        .options-section label {
+            margin-left: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 1000px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 350px;
+            padding: 12px;
+            border: 1px solid #ccd0d5;
+            border-radius: 6px;
+            font-size: 15px;
+            line-height: 1.6;
+            resize: vertical;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        textarea:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        .input-section, .output-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .char-count {
+            font-size: 12px;
+            color: #606770;
+            text-align: right;
+            margin-top: 5px;
+            height: 15px; /* Reserve space to prevent layout shift */
+        }
+        h2 {
+            font-size: 20px;
+            text-align: left;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        button {
+            flex-grow: 1;
+            padding: 12px 18px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        button:active {
+            transform: translateY(1px);
+            background-color: #005cbf;
+        }
+        .clear-button {
+            background-color: #6c757d;
+        }
+        .clear-button:hover {
+            background-color: #5a6268;
+        }
+        .clear-button:active {
+            background-color: #545b62;
+        }
+        .copy-button {
+            background-color: #28a745;
+        }
+        .copy-button:hover {
+            background-color: #218838;
+        }
+        .copy-button:active {
+            background-color: #1e7e34;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease, bottom 0.5s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding: 20px;
+            }
+            textarea {
+                height: 250px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>智能标点转换器</h1>
+        <p>轻松转换中英文标点，保留您的文本格式</p>
+    </div>
+    <div class="options-section">
+        <input type="checkbox" id="convertChinesePeriod" checked>
+        <label for="convertChinesePeriod">转换中文句号 ( 。➔ . )</label>
+    </div>
+    <div class="container">
+        <div class="input-section">
+            <h2>输入文本 (支持富文本格式保留)</h2>
+            <textarea id="inputText" placeholder="请在这里粘贴或输入您的文本..."></textarea>
+            <div class="char-count" id="inputCharCount">字数: 0</div>
+            <div class="button-group">
+                <button onclick="convertPunctuation()">转换标点</button>
+                <button class="clear-button" onclick="clearInputText()">清空输入</button>
+            </div>
+        </div>
+        <div class="output-section">
+            <h2>转换后文本</h2>
+            <textarea id="outputText" readonly placeholder="转换后的文本将显示在这里..."></textarea>
+            <div class="char-count" id="outputCharCount">字数: 0</div>
+            <div class="button-group">
+                <button class="copy-button" onclick="copyOutputText()">复制结果</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastNotification" class="toast"></div>
+
+    <script>
+        const inputTextarea = document.getElementById('inputText');
+        const outputTextarea = document.getElementById('outputText');
+        const inputCharCount = document.getElementById('inputCharCount');
+        const outputCharCount = document.getElementById('outputCharCount');
+
+        inputTextarea.addEventListener('input', () => {
+            const count = inputTextarea.value.length;
+            inputCharCount.textContent = `字数: ${count}`;
+        });
+
+        // MutationObserver to detect changes in outputTextarea (since it's readonly and changed programmatically)
+        const observer = new MutationObserver(() => {
+            const count = outputTextarea.value.length;
+            outputCharCount.textContent = `字数: ${count}`;
+        });
+        observer.observe(outputTextarea, { attributes: true, childList: true, characterData: true, subtree: true });
+
+        function convertPunctuation() {
+            const inputText = document.getElementById('inputText').value;
+            let outputText = inputText;
+            const convertChinesePeriodCheckbox = document.getElementById('convertChinesePeriod');
+
+            // 定义中文标点到英文标点的映射
+            const punctuationMap = {
+                // '。': '.', // conditionally added based on checkbox
+                '，': ',',
+                '！': '!',
+                '？': '?',
+                '；': ';',
+                '：': ':',
+                '“': '"',
+                '”': '"',
+                '‘': "'",
+                '’': "'",
+                '（': '(',
+                '）': ')',
+                '【': '[',
+                '】': ']',
+                '《': '<',
+                '》': '>',
+                '—': '-',
+                '……': '...',
+                '、': ',' // 顿号通常转换为逗号
+            };
+
+            if (convertChinesePeriodCheckbox.checked) {
+                punctuationMap['。'] = '.';
+            }
+
+            // 遍历映射并替换
+            for (const chinesePunc in punctuationMap) {
+                const englishPunc = punctuationMap[chinesePunc];
+                // 使用正则表达式进行全局替换
+                const regex = new RegExp(chinesePunc.replace(/([.*+?^${}()|[\]\\])/g, '\\$1'), 'g');
+                outputText = outputText.replace(regex, englishPunc);
+            }
+
+            document.getElementById('outputText').value = outputText;
+            // Trigger manual update for output char count after conversion
+            const count = outputText.length;
+            outputCharCount.textContent = `字数: ${count}`;
+            showToast('标点转换完成！');
+        }
+
+        function clearInputText() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputText').value = '';
+            inputCharCount.textContent = '字数: 0';
+            outputCharCount.textContent = '字数: 0';
+            showToast('输入内容已清空');
+        }
+
+        // Removed copyInputText function as it's no longer used and was causing confusion.
+
+        function copyOutputText() {
+            const outputTextarea = document.getElementById('outputText');
+            if (!outputTextarea.value) {
+                showToast('没有内容可复制');
+                return;
+            }
+            outputTextarea.select();
+            outputTextarea.setSelectionRange(0, 99999); // For mobile devices
+
+            try {
+                document.execCommand('copy');
+                showToast('已成功复制到剪贴板！');
+            } catch (err) {
+                showToast('复制失败，请手动复制。');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            // 移除旧的定时器（如果有）
+            if (toast.timeoutId) {
+                clearTimeout(toast.timeoutId);
+            }
+
+            // 设置新的定时器，在3秒后隐藏提示
+            toast.timeoutId = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
