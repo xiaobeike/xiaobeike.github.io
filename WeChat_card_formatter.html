@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信公众号排版工具 v3.0 - 多款卡片式模板</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .template-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .template-btn {
+            padding: 8px 16px;
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            color: #666;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .template-btn:hover {
+            border-color: #07c160;
+            color: #07c160;
+        }
+
+        .template-btn.active {
+            background: #07c160;
+            border-color: #07c160;
+            color: white;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #07c160;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #06ad56;
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        .main {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            height: calc(100vh - 180px);
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 10px 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: bold;
+            color: #666;
+            font-size: 14px;
+        }
+
+        #input {
+            flex: 1;
+            padding: 20px;
+            border: none;
+            resize: none;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            outline: none;
+        }
+
+        #preview-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        #preview {
+            min-height: 100%;
+        }
+
+        #message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #07c160;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .preview-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        .template-category {
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #999;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <h1>微信公众号排版工具 v3.0</h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="resetToDefault()">恢复默认</button>
+                <button class="btn" onclick="copyToWechat()">复制到公众号</button>
+            </div>
+        </div>
+        <div class="preview-note">
+            💡 新增多款卡片式模板！使用内联样式，复制到微信公众号编辑器后样式会完美保留。
+        </div>
+        <div class="template-category">📝 基础模板</div>
+        <div class="template-selector" style="margin-top: 10px;">
+            <button class="template-btn active" data-template="simple" onclick="switchTemplate('simple')">简约清新</button>
+            <button class="template-btn" data-template="warm" onclick="switchTemplate('warm')">温暖治愈</button>
+            <button class="template-btn" data-template="business" onclick="switchTemplate('business')">商务专业</button>
+            <button class="template-btn" data-template="literary" onclick="switchTemplate('literary')">文艺清新</button>
+            <button class="template-btn" data-template="elegant" onclick="switchTemplate('elegant')">优雅大气</button>
+        </div>
+        <div class="template-category" style="margin-top: 15px;">🎨 卡片式模板</div>
+        <div class="template-selector" style="margin-top: 10px;">
+            <button class="template-btn" data-template="card-green" onclick="switchTemplate('card-green')">清新绿卡</button>
+            <button class="template-btn" data-template="card-blue" onclick="switchTemplate('card-blue')">商务蓝卡</button>
+            <button class="template-btn" data-template="card-orange" onclick="switchTemplate('card-orange')">温暖橙卡</button>
+            <button class="template-btn" data-template="card-purple" onclick="switchTemplate('card-purple')">优雅紫卡</button>
+            <button class="template-btn" data-template="card-pink" onclick="switchTemplate('card-pink')">浪漫粉卡</button>
+            <button class="template-btn" data-template="card-dark" onclick="switchTemplate('card-dark')">深色卡片</button>
+            <button class="template-btn" data-template="card-gradient" onclick="switchTemplate('card-gradient')">渐变卡片</button>
+            <button class="template-btn" data-template="card-shadow" onclick="switchTemplate('card-shadow')">立体阴影</button>
+        </div>
+    </header>
+
+    <div class="main">
+        <div class="panel">
+            <div class="panel-header">Markdown 输入</div>
+            <textarea id="input" placeholder="在这里输入 Markdown 格式的文章..."></textarea>
+        </div>
+        <div class="panel">
+            <div class="panel-header">预览（微信公众号格式）</div>
+            <div id="preview-container">
+                <div id="preview"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message">已复制到剪贴板！</div>
+
+    <script>
+        const input = document.getElementById('input');
+        const preview = document.getElementById('preview');
+
+        // 基础模板
+        const baseTemplates = {
+            simple: {
+                name: '简约清新',
+                styles: {
+                    h1: { fontSize: '20px', fontWeight: 'bold', color: '#333333', marginBottom: '20px', marginTop: '20px' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#07c160', marginBottom: '15px', marginTop: '25px', paddingBottom: '8px', borderBottom: '2px solid #07c160' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#333333', marginBottom: '12px', marginTop: '20px' },
+                    p: { fontSize: '15px', lineHeight: '1.8', color: '#333333', marginBottom: '15px', marginTop: '15px', textAlign: 'justify' },
+                    strong: { color: '#07c160', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#f8f8f8', borderLeft: '4px solid #07c160', padding: '15px', marginBottom: '15px', marginTop: '15px', fontSize: '14px', lineHeight: '1.6', color: '#666666' },
+                    code: { backgroundColor: '#f8f8f8', padding: '2px 6px', fontSize: '14px', color: '#333333' },
+                    pre: { backgroundColor: '#f8f8f8', padding: '15px', marginBottom: '15px', marginTop: '15px', overflow: 'auto' },
+                    hr: { border: 'none', borderTop: '1px dashed #d0d0d0', marginBottom: '20px', marginTop: '20px' },
+                    ul: { marginBottom: '15px', marginTop: '15px', paddingLeft: '30px', fontSize: '15px', lineHeight: '1.8', color: '#333333' },
+                    ol: { marginBottom: '15px', marginTop: '15px', paddingLeft: '30px', fontSize: '15px', lineHeight: '1.8', color: '#333333' },
+                    li: { marginBottom: '8px', marginTop: '8px', color: '#333333' }
+                }
+            },
+            warm: {
+                name: '温暖治愈',
+                styles: {
+                    h1: { fontSize: '22px', fontWeight: 'bold', color: '#ff6b35', marginBottom: '20px', marginTop: '20px' },
+                    h2: { fontSize: '19px', fontWeight: 'bold', color: '#ff8c00', marginBottom: '15px', marginTop: '25px', paddingBottom: '10px', borderBottom: '3px solid #ff8c00' },
+                    h3: { fontSize: '17px', fontWeight: 'bold', color: '#ff6b35', marginBottom: '12px', marginTop: '20px' },
+                    p: { fontSize: '16px', lineHeight: '2', color: '#333333', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#ff6b35', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#fff5e6', borderLeft: '5px solid #ff8c00', padding: '18px', marginBottom: '18px', marginTop: '18px', fontSize: '15px', lineHeight: '1.8', color: '#666666' },
+                    code: { backgroundColor: '#fff5e6', padding: '3px 8px', fontSize: '15px', color: '#333333' },
+                    pre: { backgroundColor: '#fff5e6', padding: '18px', marginBottom: '18px', marginTop: '18px', overflow: 'auto' },
+                    hr: { border: 'none', borderTop: '2px dashed #ffcc80', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '35px', fontSize: '16px', lineHeight: '2', color: '#333333' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '35px', fontSize: '16px', lineHeight: '2', color: '#333333' },
+                    li: { marginBottom: '10px', marginTop: '10px', color: '#333333' }
+                }
+            },
+            business: {
+                name: '商务专业',
+                styles: {
+                    h1: { fontSize: '21px', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '18px', marginTop: '18px' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#2563eb', marginBottom: '12px', marginTop: '22px', paddingBottom: '8px', borderBottom: '2px solid #2563eb' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '10px', marginTop: '18px' },
+                    p: { fontSize: '15px', lineHeight: '1.75', color: '#333333', marginBottom: '14px', marginTop: '14px', textAlign: 'justify' },
+                    strong: { color: '#2563eb', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#eff6ff', borderLeft: '4px solid #2563eb', padding: '14px', marginBottom: '14px', marginTop: '14px', fontSize: '14px', lineHeight: '1.7', color: '#555555' },
+                    code: { backgroundColor: '#f0f7ff', padding: '2px 6px', fontSize: '14px', color: '#1e3a8a' },
+                    pre: { backgroundColor: '#f0f7ff', padding: '14px', marginBottom: '14px', marginTop: '14px', overflow: 'auto' },
+                    hr: { border: 'none', borderTop: '1px solid #bfdbfe', marginBottom: '18px', marginTop: '18px' },
+                    ul: { marginBottom: '14px', marginTop: '14px', paddingLeft: '28px', fontSize: '15px', lineHeight: '1.75', color: '#333333' },
+                    ol: { marginBottom: '14px', marginTop: '14px', paddingLeft: '28px', fontSize: '15px', lineHeight: '1.75', color: '#333333' },
+                    li: { marginBottom: '7px', marginTop: '7px', color: '#333333' }
+                }
+            },
+            literary: {
+                name: '文艺清新',
+                styles: {
+                    h1: { fontSize: '20px', fontWeight: 'bold', color: '#7c3aed', marginBottom: '20px', marginTop: '20px' },
+                    h2: { fontSize: '17px', fontWeight: 'bold', color: '#8b5cf6', marginBottom: '15px', marginTop: '25px', paddingBottom: '10px', borderBottom: '2px dotted #8b5cf6' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#7c3aed', marginBottom: '12px', marginTop: '20px' },
+                    p: { fontSize: '15px', lineHeight: '2', color: '#333333', marginBottom: '16px', marginTop: '16px', textAlign: 'justify' },
+                    strong: { color: '#8b5cf6', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#faf5ff', borderLeft: '4px solid #8b5cf6', padding: '16px', marginBottom: '16px', marginTop: '16px', fontSize: '14px', lineHeight: '1.8', color: '#666666' },
+                    code: { backgroundColor: '#faf5ff', padding: '2px 6px', fontSize: '14px', color: '#7c3aed' },
+                    pre: { backgroundColor: '#faf5ff', padding: '16px', marginBottom: '16px', marginTop: '16px', overflow: 'auto' },
+                    hr: { border: 'none', borderTop: '1px solid #d8b4fe', marginBottom: '20px', marginTop: '20px' },
+                    ul: { marginBottom: '16px', marginTop: '16px', paddingLeft: '30px', fontSize: '15px', lineHeight: '2', color: '#333333' },
+                    ol: { marginBottom: '16px', marginTop: '16px', paddingLeft: '30px', fontSize: '15px', lineHeight: '2', color: '#333333' },
+                    li: { marginBottom: '9px', marginTop: '9px', color: '#333333' }
+                }
+            },
+            elegant: {
+                name: '优雅大气',
+                styles: {
+                    h1: { fontSize: '23px', fontWeight: 'bold', color: '#1f2937', marginBottom: '22px', marginTop: '22px' },
+                    h2: { fontSize: '20px', fontWeight: 'bold', color: '#374151', marginBottom: '16px', marginTop: '28px', paddingBottom: '12px', borderBottom: '3px solid #9ca3af' },
+                    h3: { fontSize: '17px', fontWeight: 'bold', color: '#4b5563', marginBottom: '14px', marginTop: '22px' },
+                    p: { fontSize: '16px', lineHeight: '1.85', color: '#374151', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#4b5563', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#f9fafb', borderLeft: '5px solid #6b7280', padding: '20px', marginBottom: '20px', marginTop: '20px', fontSize: '15px', lineHeight: '1.8', color: '#6b7280' },
+                    code: { backgroundColor: '#f3f4f6', padding: '3px 8px', fontSize: '15px', color: '#374151' },
+                    pre: { backgroundColor: '#f3f4f6', padding: '20px', marginBottom: '20px', marginTop: '20px', overflow: 'auto' },
+                    hr: { border: 'none', borderTop: '2px solid #d1d5db', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '16px', lineHeight: '1.85', color: '#374151' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '16px', lineHeight: '1.85', color: '#374151' },
+                    li: { marginBottom: '10px', marginTop: '10px', color: '#374151' }
+                }
+            }
+        };
+
+        // 卡片式模板
+        const cardTemplates = {
+            // 清新绿卡
+            'card-green': {
+                name: '清新绿卡',
+                styles: {
+                    h1: { fontSize: '22px', fontWeight: 'bold', color: '#047857', marginBottom: '22px', marginTop: '22px', textAlign: 'center' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#ffffff', marginBottom: '18px', marginTop: '25px', backgroundColor: '#059669', padding: '14px 18px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#065f46', marginBottom: '14px', marginTop: '20px', backgroundColor: '#ecfdf5', padding: '10px 14px', borderRadius: '8px', border: '2px solid #10b981' },
+                    p: { fontSize: '15px', lineHeight: '1.9', color: '#374151', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#059669', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#ecfdf5', borderLeft: '5px solid #10b981', padding: '16px', marginBottom: '18px', marginTop: '18px', fontSize: '14px', lineHeight: '1.7', color: '#065f46', borderRadius: '5px' },
+                    code: { backgroundColor: '#ecfdf5', padding: '3px 7px', fontSize: '14px', color: '#047857', borderRadius: '3px' },
+                    pre: { backgroundColor: '#ecfdf5', padding: '16px', marginBottom: '18px', marginTop: '18px', overflow: 'auto', borderRadius: '5px', border: '1px solid #10b981' },
+                    hr: { border: 'none', borderTop: '2px solid #6ee7b7', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    li: { marginBottom: '9px', marginTop: '9px', color: '#374151' }
+                }
+            },
+            // 商务蓝卡
+            'card-blue': {
+                name: '商务蓝卡',
+                styles: {
+                    h1: { fontSize: '22px', fontWeight: 'bold', color: '#1e40af', marginBottom: '22px', marginTop: '22px', textAlign: 'center' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#ffffff', marginBottom: '18px', marginTop: '25px', backgroundColor: '#3b82f6', padding: '14px 18px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#1e40af', marginBottom: '14px', marginTop: '20px', backgroundColor: '#eff6ff', padding: '10px 14px', borderRadius: '8px', border: '2px solid #3b82f6' },
+                    p: { fontSize: '15px', lineHeight: '1.9', color: '#1f2937', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#3b82f6', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#eff6ff', borderLeft: '5px solid #3b82f6', padding: '16px', marginBottom: '18px', marginTop: '18px', fontSize: '14px', lineHeight: '1.7', color: '#1e40af', borderRadius: '5px' },
+                    code: { backgroundColor: '#eff6ff', padding: '3px 7px', fontSize: '14px', color: '#1e40af', borderRadius: '3px' },
+                    pre: { backgroundColor: '#eff6ff', padding: '16px', marginBottom: '18px', marginTop: '18px', overflow: 'auto', borderRadius: '5px', border: '1px solid #3b82f6' },
+                    hr: { border: 'none', borderTop: '2px solid #93c5fd', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#1f2937' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#1f2937' },
+                    li: { marginBottom: '9px', marginTop: '9px', color: '#1f2937' }
+                }
+            },
+            // 温暖橙卡
+            'card-orange': {
+                name: '温暖橙卡',
+                styles: {
+                    h1: { fontSize: '22px', fontWeight: 'bold', color: '#c2410c', marginBottom: '22px', marginTop: '22px', textAlign: 'center' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#ffffff', marginBottom: '18px', marginTop: '25px', backgroundColor: '#f97316', padding: '14px 18px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(249, 115, 22, 0.2)' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#c2410c', marginBottom: '14px', marginTop: '20px', backgroundColor: '#fff7ed', padding: '10px 14px', borderRadius: '8px', border: '2px solid #f97316' },
+                    p: { fontSize: '15px', lineHeight: '1.9', color: '#374151', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#f97316', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#fff7ed', borderLeft: '5px solid #f97316', padding: '16px', marginBottom: '18px', marginTop: '18px', fontSize: '14px', lineHeight: '1.7', color: '#c2410c', borderRadius: '5px' },
+                    code: { backgroundColor: '#fff7ed', padding: '3px 7px', fontSize: '14px', color: '#c2410c', borderRadius: '3px' },
+                    pre: { backgroundColor: '#fff7ed', padding: '16px', marginBottom: '18px', marginTop: '18px', overflow: 'auto', borderRadius: '5px', border: '1px solid #f97316' },
+                    hr: { border: 'none', borderTop: '2px solid #fdba74', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    li: { marginBottom: '9px', marginTop: '9px', color: '#374151' }
+                }
+            },
+            // 优雅紫卡
+            'card-purple': {
+                name: '优雅紫卡',
+                styles: {
+                    h1: { fontSize: '22px', fontWeight: 'bold', color: '#7c3aed', marginBottom: '22px', marginTop: '22px', textAlign: 'center' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#ffffff', marginBottom: '18px', marginTop: '25px', backgroundColor: '#8b5cf6', padding: '14px 18px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(139, 92, 246, 0.2)' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#6d28d9', marginBottom: '14px', marginTop: '20px', backgroundColor: '#f5f3ff', padding: '10px 14px', borderRadius: '8px', border: '2px solid #8b5cf6' },
+                    p: { fontSize: '15px', lineHeight: '1.9', color: '#374151', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#8b5cf6', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#f5f3ff', borderLeft: '5px solid #8b5cf6', padding: '16px', marginBottom: '18px', marginTop: '18px', fontSize: '14px', lineHeight: '1.7', color: '#6d28d9', borderRadius: '5px' },
+                    code: { backgroundColor: '#f5f3ff', padding: '3px 7px', fontSize: '14px', color: '#6d28d9', borderRadius: '3px' },
+                    pre: { backgroundColor: '#f5f3ff', padding: '16px', marginBottom: '18px', marginTop: '18px', overflow: 'auto', borderRadius: '5px', border: '1px solid #8b5cf6' },
+                     hr: { border: 'none', borderTop: '2px solid #c4b5fd', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    li: { marginBottom: '9px', marginTop: '9px', color: '#374151' }
+                }
+            },
+            // 浪漫粉卡
+            'card-pink': {
+                name: '浪漫粉卡',
+                styles: {
+                    h1: { fontSize: '22px', fontWeight: 'bold', color: '#db2777', marginBottom: '22px', marginTop: '22px', textAlign: 'center' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#ffffff', marginBottom: '18px', marginTop: '25px', backgroundColor: '#ec4899', padding: '14px 18px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(236, 72, 153, 0.2)' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#be185d', marginBottom: '14px', marginTop: '20px', backgroundColor: '#fdf2f8', padding: '10px 14px', borderRadius: '8px', border: '2px solid #ec4899' },
+                    p: { fontSize: '15px', lineHeight: '1.9', color: '#374151', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#ec4899', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#fdf2f8', borderLeft: '5px solid #ec4899', padding: '16px', marginBottom: '18px', marginTop: '18px', fontSize: '14px', lineHeight: '1.7', color: '#be185d', borderRadius: '5px' },
+                    code: { backgroundColor: '#fdf2f8', padding: '3px 7px', fontSize: '14px', color: '#be185d', borderRadius: '3px' },
+                    pre: { backgroundColor: '#fdf2f8', padding: '16px', marginBottom: '18px', marginTop: '18px', overflow: 'auto', borderRadius: '5px', border: '1px solid #ec4899' },
+                     hr: { border: 'none', borderTop: '2px solid #f9a8d4', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    li: { marginBottom: '9px', marginTop: '9px', color: '#374151' }
+                }
+            },
+            // 深色卡片
+            'card-dark': {
+                name: '深色卡片',
+                styles: {
+                    h1: { fontSize: '22px', fontWeight: 'bold', color: '#ffffff', marginBottom: '22px', marginTop: '22px', textAlign: 'center', backgroundColor: '#1f2937', padding: '15px', borderRadius: '10px' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#ffffff', marginBottom: '18px', marginTop: '25px', backgroundColor: '#374151', padding: '14px 18px', borderRadius: '10px' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#f3f4f6', marginBottom: '14px', marginTop: '20px', backgroundColor: '#4b5563', padding: '10px 14px', borderRadius: '8px' },
+                    p: { fontSize: '15px', lineHeight: '1.9', color: '#e5e7eb', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#60a5fa', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#374151', borderLeft: '5px solid #60a5fa', padding: '16px', marginBottom: '18px', marginTop: '18px', fontSize: '14px', lineHeight: '1.7', color: '#d1d5db', borderRadius: '5px' },
+                    code: { backgroundColor: '#374151', padding: '3px 7px', fontSize: '14px', color: '#60a5fa', borderRadius: '3px' },
+                    pre: { backgroundColor: '#374151', padding: '16px', marginBottom: '18px', marginTop: '18px', overflow: 'auto', borderRadius: '5px', color: '#e5e7eb' },
+                    hr: { border: 'none', borderTop: '2px solid #6b7280', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#e5e7eb' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#e5e7eb' },
+                    li: { marginBottom: '9px', marginTop: '9px', color: '#e5e7eb' }
+                }
+            },
+            // 渐变卡片
+            'card-gradient': {
+                name: '渐变卡片',
+                styles: {
+                    h1: { fontSize: '22px', fontWeight: 'bold', color: '#ffffff', marginBottom: '22px', marginTop: '22px', textAlign: 'center', backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '18px 20px', borderRadius: '12px' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#ffffff', marginBottom: '18px', marginTop: '25px', backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '14px 18px', borderRadius: '10px' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#553c9a', marginBottom: '14px', marginTop: '20px', backgroundColor: '#faf5ff', padding: '10px 14px', borderRadius: '8px', border: '2px solid #8b5cf6' },
+                    p: { fontSize: '15px', lineHeight: '1.9', color: '#374151', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#667eea', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#faf5ff', borderLeft: '5px solid #8b5cf6', padding: '16px', marginBottom: '18px', marginTop: '18px', fontSize: '14px', lineHeight: '1.7', color: '#6d28d9', borderRadius: '5px' },
+                    code: { backgroundColor: '#faf5ff', padding: '3px 7px', fontSize: '14px', color: '#553c9a', borderRadius: '3px' },
+                    pre: { backgroundColor: '#faf5ff', padding: '16px', marginBottom: '18px', marginTop: '18px', overflow: 'auto', borderRadius: '5px', border: '1px solid #8b5cf6' },
+                    hr: { border: 'none', borderTop: '2px solid #c4b5fd', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    li: { marginBottom: '9px', marginTop: '9px', color: '#374151' }
+                }
+            },
+            // 立体阴影
+            'card-shadow': {
+                name: '立体阴影',
+                styles: {
+                     h1: { fontSize: '22px', fontWeight: 'bold', color: '#1f2937', marginBottom: '22px', marginTop: '22px', textAlign: 'center', backgroundColor: '#ffffff', padding: '18px 20px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' },
+                    h2: { fontSize: '18px', fontWeight: 'bold', color: '#ffffff', marginBottom: '18px', marginTop: '25px', backgroundColor: '#059669', padding: '14px 18px', borderRadius: '10px', boxShadow: '0 4px 6px -1px rgba(5, 150, 105, 0.3)' },
+                    h3: { fontSize: '16px', fontWeight: 'bold', color: '#047857', marginBottom: '14px', marginTop: '20px', backgroundColor: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '2px solid #10b981', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.1)' },
+                    p: { fontSize: '15px', lineHeight: '1.9', color: '#374151', marginBottom: '18px', marginTop: '18px', textAlign: 'justify' },
+                    strong: { color: '#059669', fontWeight: 'bold' },
+                    blockquote: { backgroundColor: '#ecfdf5', borderLeft: '5px solid #10b981', padding: '16px', marginBottom: '18px', marginTop: '18px', fontSize: '14px', lineHeight: '1.7', color: '#065f46', borderRadius: '5px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.1)' },
+                    code: { backgroundColor: '#ecfdf5', padding: '3px 7px', fontSize: '14px', color: '#047857', borderRadius: '3px', boxShadow: '0 1px 2px rgba(16, 185, 129, 0.1)' },
+                    pre: { backgroundColor: '#ecfdf5', padding: '16px', marginBottom: '18px', marginTop: '18px', overflow: 'auto', borderRadius: '5px', border: '1px solid #10b981', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.1)' },
+                    hr: { border: 'none', borderTop: '2px solid #6ee7b7', marginBottom: '25px', marginTop: '25px' },
+                    ul: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    ol: { marginBottom: '18px', marginTop: '18px', paddingLeft: '32px', fontSize: '15px', lineHeight: '1.9', color: '#374151' },
+                    li: { marginBottom: '9px', marginTop: '9px', color: '#374151' }
+                }
+            }
+        };
+
+        // 合并所有模板
+        const templates = { ...baseTemplates, ...cardTemplates };
+
+        let currentTemplate = 'simple';
+
+        input.value = `# 不必急着证明什么，真实地活着就好
+
+昨晚又失眠了。
+
+凌晨三点，我躺在床上，眼睛盯着天花板。脑子里像放电影一样，闪过各种画面：
+
+> 明天要交的报告还没写完，老板会不会觉得我不够努力？
+>
+> 孩子的数学成绩又下降了，邻居家的孩子怎么就能考满分？
+>
+> 朋友圈里，老同学又买了新房，而我还在还着房贷。
+
+我有房，有车，有工作，有家庭。按理说，该有的都有了。可为什么心里总觉得空落落的？
+
+好像一辈子都在证明什么。证明自己够努力，证明自己够成功，证明自己是个好父亲、好员工、好儿子。
+
+**但证明给谁看呢？**
+
+***
+
+## 一、楚门的选择
+
+前阵子又看了一遍《楚门的世界》。每次看，心里都有点难受。
+
+楚门的生活多好啊。每天早上，他对着镜子微笑，和邻居打招呼，开车去上班。他有稳定的工作，有友好的邻居，有美丽的妻子。所有人都爱他，所有人都对他好。
+
+**可这一切都是假的。**
+
+他的妻子是演员，邻居是演员，甚至天空都是布景。他的生活被24小时直播，全世界都在看着他，除了他自己。
+
+***
+
+楚门选择了推开那扇门。他不知道门外是什么，但他知道，虚假的完美，不如真实的残缺。
+
+**你不必证明自己拥有完美的生活。你只需要真实地活着。**
+
+***
+
+## 二、阿甘的跑步
+
+另一个让我想了很多年的电影，是《阿甘正传》。
+
+阿甘是个"傻子"。智商只有75，别人都叫他傻子。
+
+**但他活得很真实。**
+
+最让我忘不了的，是他跑步的那段。
+
+阿甘跑了三年两个月十四天十六小时。
+
+他跑步穿越美国，从东海岸到西海岸，再从西海岸回到东海岸。没有理由，没有目的，就是想跑。
+
+***
+
+阿甘说："我就是想跑。"
+
+后来有一天，他突然停下来，说："我累了，我要回家了。"
+
+**就这么简单。**
+
+***
+
+## 写给同样失眠的你
+
+如果你也在某个失眠的夜晚，问自己同样的问题：
+
+**我到底在追求什么？**
+
+我想告诉你，也许我们都想错了。
+
+我们以为人生是个证明题，要证明自己够好、够成功、够值得被爱。
+
+**但也许，人生根本不是证明题。**
+
+也许，人生只是一场体验。
+
+**你不必急着证明什么。**
+
+**真实地活着，就好。**
+
+***
+
+写到这里，天快亮了。
+
+窗外的鸟开始叫了。新的一天又要开始了。
+
+今天，我不打算证明什么。
+
+今天，我只想真实地活着。
+
+也许还是会迷茫，也许还是会焦虑。
+
+**但至少，是真实的。**
+
+这就够了。
+
+---
+
+*写于一个同样迷茫，但选择真实的夜晚*`;
+
+        function applyInlineStyles(html, templateName) {
+            const template = templates[templateName];
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+
+            const tagStyles = {
+                'h1': template.styles.h1,
+                'h2': template.styles.h2,
+                'h3': template.styles.h3,
+                'p': template.styles.p,
+                'strong': template.styles.strong,
+                'b': template.styles.strong,
+                'blockquote': template.styles.blockquote,
+                'code': template.styles.code,
+                'pre': template.styles.pre,
+                'hr': template.styles.hr,
+                'ul': template.styles.ul,
+                'ol': template.styles.ol,
+                'li': template.styles.li,
+                'em': { fontStyle: 'italic' },
+                'i': { fontStyle: 'italic' }
+            };
+
+            for (const [tagName, styles] of Object.entries(tagStyles)) {
+                if (!styles) continue;
+                const elements = tempDiv.querySelectorAll(tagName);
+                elements.forEach(element => {
+                    const existingStyle = element.getAttribute('style') || '';
+                    const newStyles = Object.entries(styles)
+                        .map(([key, value]) => {
+                            const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                            return `${cssKey}: ${value}`;
+                        })
+                        .join('; ');
+                    element.setAttribute('style', existingStyle + (existingStyle ? ';' : '') + newStyles);
+                });
+            }
+
+            return tempDiv.innerHTML;
+        }
+
+         function switchTemplate(templateName) {
+             console.log('Switching to template:', templateName);
+             
+             if (!templates[templateName]) {
+                 console.error('Template not found:', templateName);
+                 return;
+             }
+             
+             currentTemplate = templateName;
+
+             document.querySelectorAll('.template-btn').forEach(btn => {
+                 btn.classList.remove('active');
+                 if (btn.dataset.template === templateName) {
+                     btn.classList.add('active');
+                 }
+             });
+
+             convertMarkdown();
+             showMessage(`已切换到${templates[templateName].name}模版`);
+         }
+
+        function resetToDefault() {
+            switchTemplate('simple');
+        }
+
+        function convertMarkdown() {
+            const markdown = input.value;
+            const html = marked.parse(markdown);
+            const styledHtml = applyInlineStyles(html, currentTemplate);
+            preview.innerHTML = styledHtml;
+        }
+
+        input.addEventListener('input', convertMarkdown);
+
+         convertMarkdown();
+         
+         console.log('Page loaded successfully. Current template:', currentTemplate);
+         console.log('Available templates:', Object.keys(templates));
+
+         function copyToWechat() {
+            const content = preview.innerHTML;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+
+            if (navigator.clipboard) {
+                const blob = new Blob([content], { type: 'text/html' });
+                const blobText = new Blob([tempDiv.innerText], { type: 'text/plain' });
+
+                const data = [new ClipboardItem({
+                    'text/html': blob,
+                    'text/plain': blobText
+                })];
+
+                navigator.clipboard.write(data).then(() => {
+                    showMessage('已复制到剪贴板！可以直接粘贴到微信公众号');
+                }).catch(() => {
+                    tempDiv.contentEditable = true;
+                    document.body.appendChild(tempDiv);
+                    tempDiv.focus();
+                    document.execCommand('selectAll');
+                    document.execCommand('copy');
+                    document.body.removeChild(tempDiv);
+                    showMessage('已复制到剪贴板！');
+                });
+            } else {
+                tempDiv.contentEditable = true;
+                document.body.appendChild(tempDiv);
+                tempDiv.focus();
+                document.execCommand('selectAll');
+                document.execCommand('copy');
+                document.body.removeChild(tempDiv);
+                showMessage('已复制到剪贴板！');
+            }
+        }
+
+        function showMessage(text) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.style.display = 'block';
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
